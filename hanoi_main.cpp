@@ -45,16 +45,15 @@ int main()
 
 	/* 从这里继续你的程序 */
 	int choice = 0;
-	do {
+	cct_cls();
+	printMenu();
+	choice = getMenuChoice();
+	while (choice != 0) {
+		solve(choice);
 		cct_cls();
 		printMenu();
 		choice = getMenuChoice();
-
-		solve(choice);
-
-		
-	} while (choice != 0);
-
-
+	}
+	cct_gotoxy(Status_Line_X, Status_Line_Y);
 	return 0;
 }

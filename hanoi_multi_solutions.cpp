@@ -3,6 +3,10 @@
 #include <iostream>
 #include <iomanip>
 #include <conio.h>
+#include <Windows.h>
+#include "cmd_console_tools.h"
+#include "cmd_hdc_tools.h"
+#include "hanoi_const_value.h"
 using namespace std;
 
 
@@ -24,6 +28,18 @@ static int top[3] = { 0 };
 static int disk[3][10] = { 0 };
 static int step = 0;
 
+void wait() {
+    if (delay == 0)
+        _getch();
+    else {
+        Sleep(delay);
+    }
+}
+
+/*
+* Start of Print Functions
+*/
+
 void basic_solution(char from, char to) {
     cout << setw(2) << disk[to - 'A'][top[to - 'A'] - 1] << "# " << from << "-->" << to << endl;
 }
@@ -32,7 +48,7 @@ void basic_solution_with_step_record(char from, char to) {
     cout << "第" << setw(4) << step << " 步(" << setw(2) << disk[to - 'A'][top[to - 'A'] - 1] << "#: " << from << "-->" << to << ") " << endl;
 }
 
-void horizonal_array_display(char from, char to) {
+void horizontal_array_display(char from, char to) {
     cout << "第" << setw(4) << step << " 步("
         << setw(2) << disk[to - 'A'][top[to - 'A'] - 1] << "): "
         << from << "-->" << to;
@@ -51,6 +67,99 @@ void horizonal_array_display(char from, char to) {
     cout << endl;
 }
 
+void horizontal_graphical_display_print_init(char from, char to, int level) {
+    cct_cls();
+    cct_gotoxy(Status_Line_X, Status_Line_Y);
+    cout << "从 " << from << " 移动到 " << to << "，共 " << level << " 层，延时设置为 " << delay << "ms";
+
+    cct_gotoxy(MenuItem4_Start_X, MenuItem4_Start_Y);
+    cout << "初始:" << setw(17) << "";
+
+    for (int i = 0; i < 3; i++) {
+        cout << " ";
+        cout << static_cast<char>('A' + i) << ":";
+        for (int j = 0; j < 10; j++) {
+            if (disk[i][j] == 0)
+                cout << setw(2) << " ";
+            else
+                cout << setw(2) << disk[i][j];
+        }
+    }
+
+    cct_gotoxy(MenuItem4_Start_X + Underpan_A_X_OFFSET - 2, MenuItem4_Start_Y + Underpan_A_Y_OFFSET - 1);
+    for (int i = 1; i <= 2 * Underpan_Distance + 5; i++) {
+		cout << "=";
+    }
+
+    cct_gotoxy(MenuItem4_Start_X + Underpan_A_X_OFFSET, MenuItem4_Start_Y + Underpan_A_Y_OFFSET);
+    cout << "A" << endl;
+    cct_gotoxy(MenuItem4_Start_X + Underpan_A_X_OFFSET + Underpan_Distance, MenuItem4_Start_Y + Underpan_A_Y_OFFSET);
+    cout << "B" << endl;
+    cct_gotoxy(MenuItem4_Start_X + Underpan_A_X_OFFSET + Underpan_Distance * 2, MenuItem4_Start_Y + Underpan_A_Y_OFFSET);
+    cout << "C" << endl;
+
+    for (int i = 0; i < top[from - 'A']; i ++) {
+        cct_gotoxy(MenuItem4_Start_X + Underpan_A_X_OFFSET + Underpan_Distance * (from - 'A'), MenuItem4_Start_Y + Underpan_A_Y_OFFSET - 2 - i);
+        cout << disk[from - 'A'][i];
+	}
+
+    wait();
+}
+
+void horizontal_graphical_display_print(char from, char to) {
+    cct_gotoxy(MenuItem4_Start_X, MenuItem4_Start_Y);
+    cout << "第" << setw(4) << step << "步(" << disk[to - 'A'][top[to - 'A'] - 1] << "#: " << from << "-->" << to << ") ";
+
+	horizontal_array_display(from, to);
+
+    int fromX = 0, fromY = 0, toX = 0, toY = 0;
+	fromX = MenuItem4_Start_X + Underpan_A_X_OFFSET + Underpan_Distance * (from - 'A');
+	fromY = MenuItem4_Start_Y + Underpan_A_Y_OFFSET - 2 - top[from - 'A'];
+	toX = MenuItem4_Start_X + Underpan_A_X_OFFSET + Underpan_Distance * (to - 'A');
+	toY = MenuItem4_Start_Y + Underpan_A_Y_OFFSET - 1 - top[to - 'A'];
+    cct_gotoxy(fromX, fromY);
+    cout << " ";
+    cct_gotoxy(toX, toY);
+    cout << disk[to - 'A'][top[to - 'A'] - 1];
+
+    wait();
+}
+
+void graphic_preliminary_display() {
+    cct_cls();
+
+    hdc_init();
+    hdc_cls();
+
+    // draw underpan
+    for (int i = 1; i <= 3; i++) {
+        hdc_rectangle(HDC_Start_X + (i - 1) * (HDC_Underpan_Distance + HDC_Base_Width * 23), HDC_Start_Y, HDC_Base_Width * 23, HDC_Base_High, HDC_COLOR[MAX_LAYER + 1]);
+        Sleep(HDC_Init_Delay);
+	}
+
+	// draw pillars
+    for (int i = 1; i <= 3; i++) {
+        hdc_rectangle(HDC_Start_X + (i - 1) * (HDC_Underpan_Distance + HDC_Base_Width * 23) + HDC_Base_Width * 11, HDC_Start_Y - HDC_Base_High * 12, HDC_Base_Width, HDC_Base_High * 12, HDC_COLOR[MAX_LAYER + 1]);
+		Sleep(HDC_Init_Delay);
+    }
+
+	hdc_release();
+}
+
+/*
+* Hub of Print Functions
+*/
+
+void printInit(char src, char dest, char level, int choice) {
+    switch (choice) {
+    case 4:
+        horizontal_graphical_display_print_init(src, dest, level);
+        break;
+    default:
+        break;
+    }
+}
+
 void printStatus(char from, char to, int choice) {
     switch (choice) {
     case 1:
@@ -60,10 +169,20 @@ void printStatus(char from, char to, int choice) {
         basic_solution_with_step_record(from, to);
 		break;
     case 3:
-		horizonal_array_display(from, to);
+		horizontal_array_display(from, to);
+        break;
+    case 4:
+        horizontal_graphical_display_print(from, to);
+		break;
+    case 5:
+        graphic_preliminary_display();
         break;
     }
 }
+
+/*
+* End of Print Functions
+*/
 
 void returnSuspend(int choice) {
 	switch (choice) {
@@ -74,6 +193,10 @@ void returnSuspend(int choice) {
         break;
     default:
         break;
+    case 4:
+		cct_gotoxy(0, 13);
+        cout << "按回车键继续";
+		break;
     }
 
     char ch;
@@ -91,7 +214,7 @@ void move(char from, char to, int depth, int choice) {
 void hanoi(char from, char to, int depth, int choice) {
     char mid = 'A' + 'B' + 'C' - from - to;
 
-    if (depth == 1) {
+    if (depth <= 1) {
 		move(from, to, depth, choice);
         return;
     }
@@ -214,12 +337,15 @@ void solve(int choice) {
     int level = 0;
 	char src = 'A', tmp = 'B', dest = 'C'; // by default
     
-    // get hanoi configuration
-    if (choice != 5) {
-        getHanoiConf(choice, &level, &src, &dest);
-		tmp = 'A' + 'B' + 'C' - src - dest;
-	}
-    
+    // specialty solution configuration: when choice == 5
+    if (choice == 5) {
+		graphic_preliminary_display();
+        return;
+    }
+
+    getHanoiConf(choice, &level, &src, &dest);
+    tmp = 'A' + 'B' + 'C' - src - dest;
+
     // init
     step = 0;
     top[src - 'A'] = level;
@@ -231,14 +357,9 @@ void solve(int choice) {
 		disk[dest - 'A'][i] = 0;
     }
 
+    printInit(src, dest, level, choice);
+
     hanoi(src, dest, level, choice);
 
     returnSuspend(choice);
 }
-   /***************************************************************************
-     函数名称：
-     功    能：
-     输入参数：
-     返 回 值：
-     说    明：
-   ***************************************************************************/

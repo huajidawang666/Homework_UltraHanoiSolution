@@ -50,6 +50,8 @@ int getMenuChoice() {
                cout << endl; // match with Demo
                return input - '0';
           }
+          cin.clear();
+          cin.ignore(10000, '\n');
      }
 
      cout << endl;
