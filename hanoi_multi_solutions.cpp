@@ -22,11 +22,20 @@ using namespace std;
      4、按需加入系统头文件、自定义头文件、命名空间等
    ----------------------------------------------------------------------------------- */
 
-
 static int delay = 0; // miliseconds
 static int top[3] = { 0 };
 static int disk[3][10] = { 0 };
 static int step = 0;
+
+// for calculating total steps of Hanoi Tower
+// But why should I implement it manually? Cuz SJ said so...
+// God damn it SJ...
+
+int powOfTwo(int n) {
+    // assume n <= 10
+    if (n == 0) return 1;
+	return powOfTwo(n - 1) * 2;
+}
 
 void wait() {
     if (delay == 0)
@@ -48,11 +57,15 @@ void returnSuspend(int choice) {
     case 7:
         cout << endl << "按回车键继续";
         break;
-    default:
-        break;
-	case 4: // match with Demo
+    case 4: // match with Demo
         cct_gotoxy(0, 13);
         cout << "按回车键继续";
+        break;
+    case 8:
+        cct_gotoxy(Status_Line_X, Status_Line_Y);
+        cout << endl << "按回车键继续";
+        break;
+    default:
         break;
     }
 
@@ -101,13 +114,35 @@ void horizontal_array_display(char from, char to) {
     cout << endl;
 }
 
-/* choice = 4 */
-void horizontal_graphical_display_print_init(char from, char to, int level) {
+/* choice = 4 & 8 & 9 */
+void horizontal_graphical_display_print_init(char from, char to, int level, int choice) {
+	int start_X = 0, start_Y = 0;
+    switch (choice) {
+    case 4:
+        start_X = MenuItem4_Start_X;
+        start_Y = MenuItem4_Start_Y;
+	    break;
+    case 8:
+		start_X = MenuItem8_Start_X;
+		start_Y = MenuItem8_Start_Y;
+        break;
+    case 9:
+		start_X = MenuItem9_Start_X;
+		start_Y = MenuItem9_Start_Y;
+        break;
+    default:
+        break;
+    }
+
+
     cct_cls();
     cct_gotoxy(Status_Line_X, Status_Line_Y);
     cout << "从 " << from << " 移动到 " << to << "，共 " << level << " 层，延时设置为 " << delay << "ms";
+    if (choice == 8 || choice == 9) {
+        cout << "（前" << powOfTwo(level) - 1 << "步，后面自动变为0ms）";
+    }
 
-    cct_gotoxy(MenuItem4_Start_X, MenuItem4_Start_Y);
+    cct_gotoxy(start_X, start_Y);
     cout << "初始:" << setw(17) << "";
 
     for (int i = 0; i < 3; i++) {
@@ -121,37 +156,55 @@ void horizontal_graphical_display_print_init(char from, char to, int level) {
         }
     }
 
-    cct_gotoxy(MenuItem4_Start_X + Underpan_A_X_OFFSET - 2, MenuItem4_Start_Y + Underpan_A_Y_OFFSET - 1);
+    cct_gotoxy(start_X + Underpan_A_X_OFFSET - 2, start_Y + Underpan_A_Y_OFFSET - 1);
     for (int i = 1; i <= 2 * Underpan_Distance + 5; i++) {
 		cout << "=";
     }
 
-    cct_gotoxy(MenuItem4_Start_X + Underpan_A_X_OFFSET, MenuItem4_Start_Y + Underpan_A_Y_OFFSET);
+    cct_gotoxy(start_X + Underpan_A_X_OFFSET, start_Y + Underpan_A_Y_OFFSET);
     cout << "A" << endl;
-    cct_gotoxy(MenuItem4_Start_X + Underpan_A_X_OFFSET + Underpan_Distance, MenuItem4_Start_Y + Underpan_A_Y_OFFSET);
+    cct_gotoxy(start_X + Underpan_A_X_OFFSET + Underpan_Distance, start_Y + Underpan_A_Y_OFFSET);
     cout << "B" << endl;
-    cct_gotoxy(MenuItem4_Start_X + Underpan_A_X_OFFSET + Underpan_Distance * 2, MenuItem4_Start_Y + Underpan_A_Y_OFFSET);
+    cct_gotoxy(start_X + Underpan_A_X_OFFSET + Underpan_Distance * 2, start_Y + Underpan_A_Y_OFFSET);
     cout << "C" << endl;
 
     for (int i = 0; i < top[from - 'A']; i ++) {
-        cct_gotoxy(MenuItem4_Start_X + Underpan_A_X_OFFSET + Underpan_Distance * (from - 'A'), MenuItem4_Start_Y + Underpan_A_Y_OFFSET - 2 - i);
+        cct_gotoxy(start_X + Underpan_A_X_OFFSET + Underpan_Distance * (from - 'A'), start_Y + Underpan_A_Y_OFFSET - 2 - i);
         cout << disk[from - 'A'][i];
 	}
 
     wait();
 }
 
-void horizontal_graphical_display_print(char from, char to) {
-    cct_gotoxy(MenuItem4_Start_X, MenuItem4_Start_Y);
+void horizontal_graphical_display_print(char from, char to, int choice) {
+    int start_X = 0, start_Y = 0;
+    switch (choice) {
+    case 4:
+        start_X = MenuItem4_Start_X;
+        start_Y = MenuItem4_Start_Y;
+        break;
+    case 8:
+        start_X = MenuItem8_Start_X;
+        start_Y = MenuItem8_Start_Y;
+        break;
+    case 9:
+        start_X = MenuItem9_Start_X;
+        start_Y = MenuItem9_Start_Y;
+        break;
+    default:
+        break;
+    }
+
+    cct_gotoxy(start_X, start_Y);
     cout << "第" << setw(4) << step << "步(" << disk[to - 'A'][top[to - 'A'] - 1] << "#: " << from << "-->" << to << ") ";
 
 	horizontal_array_display(from, to);
 
     int fromX = 0, fromY = 0, toX = 0, toY = 0;
-	fromX = MenuItem4_Start_X + Underpan_A_X_OFFSET + Underpan_Distance * (from - 'A');
-	fromY = MenuItem4_Start_Y + Underpan_A_Y_OFFSET - 2 - top[from - 'A'];
-	toX = MenuItem4_Start_X + Underpan_A_X_OFFSET + Underpan_Distance * (to - 'A');
-	toY = MenuItem4_Start_Y + Underpan_A_Y_OFFSET - 1 - top[to - 'A'];
+	fromX = start_X + Underpan_A_X_OFFSET + Underpan_Distance * (from - 'A');
+	fromY = start_Y + Underpan_A_Y_OFFSET - 2 - top[from - 'A'];
+	toX = start_X + Underpan_A_X_OFFSET + Underpan_Distance * (to - 'A');
+	toY = start_Y + Underpan_A_Y_OFFSET - 1 - top[to - 'A'];
     cct_gotoxy(fromX, fromY);
     cout << " ";
     cct_gotoxy(toX, toY);
@@ -215,6 +268,15 @@ void graphic_first_move_init(char from, char to) {
 /*
 * This drives me MAD... I hate u SJ.
 */
+void graphic_init(char from, char to, int level, int choice) {
+    cct_cls();
+	horizontal_graphical_display_print_init(from, to, level, choice);
+
+    hdc_init();
+    hdc_cls();
+    graphic_first_move_init(from, to);
+}
+
 void graphic_move(char from, char to) {    
 
     // move upwards within pillar
@@ -395,7 +457,10 @@ void graphic_move(char from, char to) {
 void printInit(char src, char dest, char level, int choice) {
     switch (choice) {
     case 4:
-        horizontal_graphical_display_print_init(src, dest, level);
+        horizontal_graphical_display_print_init(src, dest, level, choice);
+        break;
+    case 8:
+        graphic_init(src, dest, level, choice);
         break;
     default:
         break;
@@ -414,10 +479,11 @@ void printStatus(char from, char to, int choice) {
 		horizontal_array_display(from, to);
         break;
     case 4:
-        horizontal_graphical_display_print(from, to);
+        horizontal_graphical_display_print(from, to, choice);
 		break;
-    case 5:
-        graphic_preliminary_display();
+    case 8:
+		horizontal_graphical_display_print(from, to, choice);
+		graphic_move(from, to);
         break;
     }
 }
