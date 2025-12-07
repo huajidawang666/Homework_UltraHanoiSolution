@@ -6,6 +6,7 @@
 // hanoi_multiple_solutions
 void solve(int choice);
 void getHanoiConf(int choice, int* level, char* src, char* dest);
+void returnSuspend(int choice);
 
 // hanoi_menu
 void printMenu();

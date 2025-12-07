@@ -45,15 +45,37 @@ int main()
 
 	/* 从这里继续你的程序 */
 	int choice = 0;
-	cct_cls();
-	printMenu();
-	choice = getMenuChoice();
-	while (choice != 0) {
+
+	/* 
+	* 这里原本是：
+	* cct_cls();
+	* printMenu();
+	* choice = getMenuChoice();
+	* returnSuspend(choice);
+	* 
+	* while (choice != 0) {
+	*     solve(choice);
+    *     cct_cls();
+	*     printMenu();
+	*     choice = getMenuChoice();
+	*     returnSuspend(choice);
+	* }
+	* 
+	* 为此，为 solve(int choice) 和 returnSuspend(int choice)
+	* 添加了对 choice == 0 的处理，使得初次进入菜单时，solve 不执行操作直接返回
+	*/
+
+	do {
 		solve(choice);
+		returnSuspend(choice);
+
+		// returnSuspend 现在在这里
+
 		cct_cls();
+
 		printMenu();
 		choice = getMenuChoice();
-	}
+	} while (choice != 0);
 	cct_gotoxy(Status_Line_X, Status_Line_Y);
 	return 0;
 }

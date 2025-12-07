@@ -6,7 +6,7 @@
 #include <Windows.h>
 #include "cmd_console_tools.h"
 #include "cmd_hdc_tools.h"
-#include "hanoi_const_value.h"
+#include "hanoi.h"
 using namespace std;
 
 
@@ -36,18 +36,52 @@ void wait() {
     }
 }
 
+void returnSuspend(int choice) {
+    switch (choice) {
+    case 0:
+        return;
+    case 1:
+    case 2:
+    case 3:
+    case 5:
+    case 6:
+    case 7:
+        cout << endl << "按回车键继续";
+        break;
+    default:
+        break;
+	case 4: // match with Demo
+        cct_gotoxy(0, 13);
+        cout << "按回车键继续";
+        break;
+    }
+
+    char ch;
+    while ((ch = _getch()) == '\n');
+}
+
+void graph_init() {
+    cct_cls();
+    cct_gotoxy(Status_Line_X, Status_Line_Y);
+    hdc_init();
+    hdc_cls();
+}
+
 /*
 * Start of Print Functions
 */
 
+/* choice = 1 */
 void basic_solution(char from, char to) {
     cout << setw(2) << disk[to - 'A'][top[to - 'A'] - 1] << "# " << from << "-->" << to << endl;
 }
 
+/* choice = 2 */
 void basic_solution_with_step_record(char from, char to) {
     cout << "第" << setw(4) << step << " 步(" << setw(2) << disk[to - 'A'][top[to - 'A'] - 1] << "#: " << from << "-->" << to << ") " << endl;
 }
 
+/* choice = 3*/
 void horizontal_array_display(char from, char to) {
     cout << "第" << setw(4) << step << " 步("
         << setw(2) << disk[to - 'A'][top[to - 'A'] - 1] << "): "
@@ -67,6 +101,7 @@ void horizontal_array_display(char from, char to) {
     cout << endl;
 }
 
+/* choice = 4 */
 void horizontal_graphical_display_print_init(char from, char to, int level) {
     cct_cls();
     cct_gotoxy(Status_Line_X, Status_Line_Y);
@@ -125,25 +160,232 @@ void horizontal_graphical_display_print(char from, char to) {
     wait();
 }
 
+/* choice = 5 */
 void graphic_preliminary_display() {
-    cct_cls();
-
-    hdc_init();
-    hdc_cls();
-
     // draw underpan
     for (int i = 1; i <= 3; i++) {
-        hdc_rectangle(HDC_Start_X + (i - 1) * (HDC_Underpan_Distance + HDC_Base_Width * 23), HDC_Start_Y, HDC_Base_Width * 23, HDC_Base_High, HDC_COLOR[MAX_LAYER + 1]);
+        hdc_rectangle(
+            HDC_Start_X + (i - 1) * (HDC_Underpan_Distance + HDC_Base_Width * 23),
+            HDC_Start_Y, HDC_Base_Width * 23,
+            HDC_Base_High,
+            HDC_COLOR[MAX_LAYER + 1]
+        );
         Sleep(HDC_Init_Delay);
 	}
 
 	// draw pillars
     for (int i = 1; i <= 3; i++) {
-        hdc_rectangle(HDC_Start_X + (i - 1) * (HDC_Underpan_Distance + HDC_Base_Width * 23) + HDC_Base_Width * 11, HDC_Start_Y - HDC_Base_High * 12, HDC_Base_Width, HDC_Base_High * 12, HDC_COLOR[MAX_LAYER + 1]);
+        hdc_rectangle(
+            HDC_Start_X + (i - 1) * (HDC_Underpan_Distance + HDC_Base_Width * 23) + HDC_Base_Width * 11,
+            HDC_Start_Y - HDC_Base_High * 12,
+            HDC_Base_Width, HDC_Base_High * 12,
+            HDC_COLOR[MAX_LAYER + 1]
+        );
 		Sleep(HDC_Init_Delay);
     }
+}
 
-	hdc_release();
+/* choice = 6 */
+void graphic_disk_display(char from, char to) {
+
+    // cct_cls & hdc_init & hdc_cls included.
+	graphic_preliminary_display();
+
+    // draw disks
+    for (int i = 0; i < top[from - 'A']; i++) {
+        hdc_rectangle(
+            HDC_Start_X + (from - 'A') * (HDC_Underpan_Distance + HDC_Base_Width * 23) + HDC_Base_Width * (11 - disk[from - 'A'][i]),
+            HDC_Start_Y - HDC_Base_High * (i + 1),
+            HDC_Base_Width * (disk[from - 'A'][i] * 2 + 1),
+            HDC_Base_High,
+            HDC_COLOR[disk[from - 'A'][i]]
+		);
+
+		Sleep(HDC_Init_Delay);
+    }
+}
+
+/* choice = 7 */
+void graphic_first_move_init(char from, char to) {
+	graphic_disk_display(from, to);
+}
+
+/* choice = 7 & 8 */
+
+/*
+* This drives me MAD... I hate u SJ.
+*/
+void graphic_move(char from, char to) {    
+
+    // move upwards within pillar
+    for (
+
+        /*
+        * Note : why "+1" ? cuz disk have been actually removed in array disk[3][10]
+        * print function is always called after actual move.
+        * 
+		* So all top[from - 'A'] - 1 => top[from - 'A']
+		* And all disk[from - 'A'][top[from - 'A'] - 1] => disk[to - 'A'][top[to - 'A'] - 1]
+        * 
+        * This should be precisely calculated.
+        * 
+        * ** BTW ** 
+        * These coordinations fuck my brains.
+        */
+
+        int y = HDC_Start_Y - HDC_Base_High * (top[from - 'A'] + 1);
+        y - HDC_Step_Y >= HDC_Top_Y; // Note: y is decreasing when moving UPWARDS
+		y -= HDC_Step_Y
+        ) {
+		// clear previous position
+        hdc_rectangle(
+            HDC_Start_X + (from - 'A') * (HDC_Underpan_Distance + HDC_Base_Width * 23) + HDC_Base_Width * (11 - disk[to - 'A'][top[to - 'A'] - 1]),
+            y + HDC_Base_High - HDC_Step_Y,
+            HDC_Base_Width * (disk[to - 'A'][top[to - 'A'] - 1] * 2 + 1),
+            HDC_Step_Y,
+            HDC_COLOR[0]
+		);
+
+        // restore pillar
+
+        // Fill the pillar only when overlapped.
+		if (y + HDC_Base_High > HDC_Start_Y - HDC_Base_High * 12) { 
+
+            /*
+            * Worthy of Note:
+            * Why getting a "(A>B) ? A:B" here?
+            *
+            * Normal Case:
+            *
+            * ========== (Pillar Top)
+            * ↑
+            * Far from Each Other
+            * ↓
+            * ========== (New Disk Bottom)      ┬ To be Filled
+            * ========== (Former Disk Bottom)   ┘
+            *
+            *
+            * A troublesome case:
+            *
+            * ========== (New Disk Bottom)
+            * ========== (Pillar Top)           ┬ To be Filled
+            * ========== (Former Disk Bottom)   ┘
+            *
+            */
+
+            hdc_rectangle(
+                HDC_Start_X + (from - 'A') * (HDC_Underpan_Distance + HDC_Base_Width * 23) + HDC_Base_Width * 11,
+				// to be more precise, there might be a tiny gap between the top of the pillar and the bottom of the new disk
+                (y + HDC_Base_High - HDC_Step_Y > HDC_Start_Y - HDC_Base_High * 12) ?
+                    y + HDC_Base_High - HDC_Step_Y : HDC_Start_Y - HDC_Base_High * 12,
+                HDC_Base_Width,
+                (y + HDC_Base_High - HDC_Step_Y > HDC_Start_Y - HDC_Base_High * 12) ?
+                    HDC_Step_Y : (HDC_Start_Y - HDC_Base_High * 12) - (y + HDC_Base_High - HDC_Step_Y),
+                HDC_COLOR[MAX_LAYER + 1]
+            );
+        }
+		// draw disk at new position
+        hdc_rectangle(
+            HDC_Start_X + (from - 'A') * (HDC_Underpan_Distance + HDC_Base_Width * 23) + HDC_Base_Width * (11 - disk[to - 'A'][top[to - 'A'] - 1]),
+            y - HDC_Step_Y,
+            HDC_Base_Width * (disk[to - 'A'][top[to - 'A'] - 1] * 2 + 1),
+            HDC_Step_Y,
+			HDC_COLOR[disk[to - 'A'][top[to - 'A'] - 1]]
+        );
+
+        wait();
+    }
+
+    // step for x-cord might be negative.
+
+    for (
+        int x = HDC_Start_X + (from - 'A') * (HDC_Underpan_Distance + HDC_Base_Width * 23) + HDC_Base_Width * (11 - disk[to - 'A'][top[to - 'A'] - 1]);
+        (x + ((from < to) ? HDC_Step_X : -HDC_Step_X))
+            != (HDC_Start_X + (to - 'A') * (HDC_Underpan_Distance + HDC_Base_Width * 23) + HDC_Base_Width * (11 - disk[to - 'A'][top[to - 'A'] - 1]))
+               + ((from < to) ? HDC_Step_X : -HDC_Step_X);
+        x += (from < to) ? HDC_Step_X : -HDC_Step_X
+		) {
+
+        // clear previous position
+        hdc_rectangle(
+            x + ((from < to) ? 0 : (HDC_Base_Width * (disk[to - 'A'][top[to - 'A'] - 1] * 2 + 1) - HDC_Step_X)),
+            HDC_Top_Y,
+            HDC_Step_X,
+            HDC_Base_High,
+            HDC_COLOR[0]
+        );
+
+        // draw disk at new position
+        hdc_rectangle(
+            x + ((from < to) ? (HDC_Base_Width * (disk[to - 'A'][top[to - 'A'] - 1] * 2 + 1)) : -HDC_Step_X),
+            HDC_Top_Y,
+			HDC_Step_X,
+            HDC_Base_High,
+			HDC_COLOR[disk[to - 'A'][top[to - 'A'] - 1]]
+        );
+        wait();
+    }
+
+	// move downwards within pillar
+    for (
+        int y = HDC_Top_Y;
+		y + HDC_Base_High + HDC_Step_Y <= HDC_Start_Y - HDC_Base_High * (top[to - 'A'] - 1);
+        y += HDC_Step_Y
+        ) {
+        // clear previous position
+        hdc_rectangle(
+            HDC_Start_X + (to - 'A') * (HDC_Underpan_Distance + HDC_Base_Width * 23) + HDC_Base_Width * (11 - disk[to - 'A'][top[to - 'A'] - 1]),
+            y,
+            HDC_Base_Width * (disk[to - 'A'][top[to - 'A'] - 1] * 2 + 1),
+            HDC_Step_Y,
+            HDC_COLOR[0]
+        );
+		// restore pillar
+
+		// Fill the pillar only when overlapped.
+		if (y + HDC_Step_Y > HDC_Start_Y - HDC_Base_High * 12) {
+
+            /*
+            * Worthy of Note AS WELL:
+            * Why getting a "(A>B) ? A:B" here?
+            *
+            * Normal Case:
+            *
+            * ========== (Pillar Top)
+            * ↑
+            * Far from Each Other
+            * ↓
+            * ========== (Former Disk Top)  ┬ To be Filled
+            * ========== (New Disk Top)     ┘
+            *
+            *
+            * A troublesome case:
+            *
+            * ========== (Former Disk Top)
+            * ========== (Pillar Top)       ┬ To be Filled
+            * ========== (New Disk Top)     ┘
+            *
+            */
+
+            hdc_rectangle(
+                HDC_Start_X + (to - 'A') * (HDC_Underpan_Distance + HDC_Base_Width * 23) + HDC_Base_Width * 11,
+                (y > HDC_Start_Y - HDC_Base_High * 12) ? y : HDC_Start_Y - HDC_Base_High * 12,
+                HDC_Base_Width,
+                (y > HDC_Start_Y - HDC_Base_High * 12) ? HDC_Step_Y : (y + HDC_Step_Y) - (HDC_Start_Y - HDC_Base_High * 12),
+                HDC_COLOR[MAX_LAYER + 1]
+            );
+        }
+        // draw disk at new position
+        hdc_rectangle(
+            HDC_Start_X + (to - 'A') * (HDC_Underpan_Distance + HDC_Base_Width * 23) + HDC_Base_Width * (11 - disk[to - 'A'][top[to - 'A'] - 1]),
+            y + HDC_Base_High,
+            HDC_Base_Width * (disk[to - 'A'][top[to - 'A'] - 1] * 2 + 1),
+            HDC_Step_Y,
+            HDC_COLOR[disk[to - 'A'][top[to - 'A'] - 1]]
+        );
+
+        wait();
+	}
 }
 
 /*
@@ -183,25 +425,6 @@ void printStatus(char from, char to, int choice) {
 /*
 * End of Print Functions
 */
-
-void returnSuspend(int choice) {
-	switch (choice) {
-    case 1:
-    case 2:
-    case 3:
-        cout << endl << "按回车键继续";
-        break;
-    default:
-        break;
-    case 4:
-		cct_gotoxy(0, 13);
-        cout << "按回车键继续";
-		break;
-    }
-
-    char ch;
-    while ((ch = _getch()) == '\n');
-}
 
 void move(char from, char to, int depth, int choice) {
     // move disk from "from" to "to"
@@ -333,20 +556,30 @@ void getHanoiConf(int choice, int* level, char* src, char* dest) {
     }
 }
 
-void solve(int choice) {    
+void solve(int choice) {
+
+	// specialty solution configuration: when choice == 0
+	if (choice == 0) {
+        return;
+    }
+
     int level = 0;
 	char src = 'A', tmp = 'B', dest = 'C'; // by default
     
     // specialty solution configuration: when choice == 5
     if (choice == 5) {
+        graph_init();
+
 		graphic_preliminary_display();
+
+        hdc_release();
         return;
     }
 
     getHanoiConf(choice, &level, &src, &dest);
-    tmp = 'A' + 'B' + 'C' - src - dest;
 
     // init
+    tmp = 'A' + 'B' + 'C' - src - dest;
     step = 0;
     top[src - 'A'] = level;
 	top[tmp - 'A'] = 0;
@@ -357,9 +590,36 @@ void solve(int choice) {
 		disk[dest - 'A'][i] = 0;
     }
 
+    // specialty solution configuration: when choice == 6
+
+    if (choice == 6) {
+		graph_init();
+
+		graphic_disk_display(src, dest);
+
+		hdc_release();
+        return;
+    }
+
+    if (choice == 7) {
+        graph_init();
+
+		graphic_first_move_init(src, dest);
+
+        disk[dest - 'A'][top[dest - 'A']++] = disk[src - 'A'][--top[src - 'A']];
+        disk[src - 'A'][top[src - 'A']] = 0;
+        step++;
+
+		// print is always called after actual move.
+        graphic_move(src, dest);
+
+        hdc_release();
+        return;
+    }
+
+    // specialty solution configuration: when choice == 7
+
     printInit(src, dest, level, choice);
 
     hanoi(src, dest, level, choice);
-
-    returnSuspend(choice);
 }
