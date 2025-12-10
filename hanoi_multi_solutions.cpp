@@ -31,6 +31,8 @@ static int step = 0;
 // But why should I implement it manually? Cuz SJ said so...
 // God damn it SJ...
 
+void move_disk(char from, char to, int choice);
+
 int powOfTwo(int n) {
     // assume n <= 10
     if (n == 0) return 1;
@@ -38,8 +40,10 @@ int powOfTwo(int n) {
 }
 
 void wait() {
-    if (delay == 0)
-        _getch();
+    if (delay == 0) {
+        (void)_getch();
+        // to avoid VS warn C6031: Return value ignored: '_getch'
+    }
     else {
         Sleep(delay);
     }
@@ -55,6 +59,7 @@ void returnSuspend(int choice) {
     case 5:
     case 6:
     case 7:
+    case 9:
         cout << endl << "按回车键继续";
         break;
     case 4: // match with Demo
@@ -138,7 +143,7 @@ void horizontal_graphical_display_print_init(char from, char to, int level, int 
     cct_cls();
     cct_gotoxy(Status_Line_X, Status_Line_Y);
     cout << "从 " << from << " 移动到 " << to << "，共 " << level << " 层，延时设置为 " << delay << "ms";
-    if (choice == 8 || choice == 9) {
+    if (choice == 8) {
         cout << "（前" << powOfTwo(level) - 1 << "步，后面自动变为0ms）";
     }
 
@@ -196,7 +201,6 @@ void horizontal_graphical_display_print(char from, char to, int choice) {
     }
 
     cct_gotoxy(start_X, start_Y);
-    cout << "第" << setw(4) << step << "步(" << disk[to - 'A'][top[to - 'A'] - 1] << "#: " << from << "-->" << to << ") ";
 
 	horizontal_array_display(from, to);
 
@@ -268,6 +272,7 @@ void graphic_first_move_init(char from, char to) {
 /*
 * This drives me MAD... I hate u SJ.
 */
+
 void graphic_init(char from, char to, int level, int choice) {
     cct_cls();
 	horizontal_graphical_display_print_init(from, to, level, choice);
@@ -275,6 +280,55 @@ void graphic_init(char from, char to, int level, int choice) {
     hdc_init();
     hdc_cls();
     graphic_first_move_init(from, to);
+}
+
+/* choice = 9 */
+
+int check_win(char dest, int level) {
+    return top[dest - 'A'] == level;
+}
+
+int get_command_input(char* from, char* to) {
+
+    int num_of_input = 0;
+    char ch[20] = { 0 };
+    for (int i = 0; i < 20; i++) {
+        char _ch = 0;
+
+        // match with demo: can only input normal character & enter ('\n' & '\r')
+        while (!(((_ch = _getch()) >= 32 && _ch < 128) || _ch == '\r' || _ch == '\n'));
+        
+        ch[i] = _ch;
+        if (ch[i] == '\r' || ch[i] == '\n') {
+            ch[i] = 0;
+            break;
+        }
+        cout << ch[i];
+
+
+        if (_ch >= 'a' && _ch <= 'z') {
+            _ch += 'A' - 'a';
+        }
+        num_of_input++;
+    }
+
+    if (num_of_input == 1 && (ch[0] == 'Q' || ch[0] == 'q')) {
+        return -1; // return -1 == quit
+    }
+
+    if (!(num_of_input == 2 &&
+         (ch[0] >= 'A' && ch[0] <= 'C') &&
+         (ch[1] >= 'A' && ch[1] <= 'C') )) {
+        cct_gotoxy(Status_Line_X + 60, Status_Line_Y - 1); // 60 is the offset from frontier to input position
+        cout << "                     ";
+        cct_gotoxy(Status_Line_X + 60, Status_Line_Y - 1);
+        return -2; // return -2 
+    }
+
+    *from = ch[0];
+    *to = ch[1];
+
+    return 0;
 }
 
 void graphic_move(char from, char to) {    
@@ -482,6 +536,7 @@ void printStatus(char from, char to, int choice) {
         horizontal_graphical_display_print(from, to, choice);
 		break;
     case 8:
+    case 9:
 		horizontal_graphical_display_print(from, to, choice);
 		graphic_move(from, to);
         break;
@@ -492,24 +547,87 @@ void printStatus(char from, char to, int choice) {
 * End of Print Functions
 */
 
-void move(char from, char to, int depth, int choice) {
+void move_disk(char from, char to, int choice) {
     // move disk from "from" to "to"
     disk[to - 'A'][top[to - 'A']++] = disk[from - 'A'][--top[from - 'A']];
     disk[from - 'A'][top[from - 'A']] = 0;
     step++;
-	printStatus(from, to, choice);
+    printStatus(from, to, choice);
+}
+
+void game(char dest, int level) {
+    while (!check_win(dest, level)) {
+        char from = 0, to = 0;
+        cct_gotoxy(Status_Line_X, Status_Line_Y - 1);
+        cout << "请输入移动的柱号(命令形式：AC=A顶端的盘子移动到C，Q=退出) ：";
+
+        /* get input */
+
+        int result = get_command_input(&from, &to); // 0 == normal , -1 == quit, -2 == invalid
+
+        if (result == -1) {
+            cct_gotoxy(Status_Line_X, Status_Line_Y);
+            cout << "游戏中止!!!!!";
+            return;
+        }
+
+        if (result == -2) {
+            continue;
+        }
+
+        if (top[from - 'A'] <= 0) {
+            cct_gotoxy(Status_Line_X, Status_Line_Y);
+            cout << "源柱为空!";
+            Sleep(HDC_Init_Delay);
+            cct_gotoxy(Status_Line_X, Status_Line_Y);
+            cout << "         ";
+
+            /*
+            * Demo 这里选择直接用等长长度空白覆盖，其实应该再次输出信息:
+            * 从[from]移动到[to]，共[level]层，延时设置为[delay]ms
+            */ 
+
+            Sleep(HDC_Init_Delay);
+            continue;
+        }
+
+        if (top[to - 'A'] != 0 && disk[from - 'A'][top[from - 'A'] - 1] >= disk[to - 'A'][top[to - 'A'] - 1]) {
+            cct_gotoxy(Status_Line_X, Status_Line_Y);
+            cout << "大盘压小盘，非法移动!";
+            Sleep(HDC_Init_Delay);
+            cct_gotoxy(Status_Line_X, Status_Line_Y);
+            cout << "                     ";
+
+            /*
+            * Demo 这里选择直接用等长长度空白覆盖，其实应该再次输出信息:
+            * 从[from]移动到[to]，共[level]层，延时设置为[delay]ms
+            */
+                
+            Sleep(HDC_Init_Delay);
+            continue;
+        }
+
+        move_disk(from, to, 9);
+
+        cct_gotoxy(Status_Line_X + 60, Status_Line_Y - 1); // 60 is the offset from frontier to input position
+        cout << "                     ";
+        cct_gotoxy(Status_Line_X + 60, Status_Line_Y - 1);
+    }
+    cct_gotoxy(Status_Line_X, Status_Line_Y);
+    cout << "游戏结束!!!!!";
+    return;
 }
 
 void hanoi(char from, char to, int depth, int choice) {
     char mid = 'A' + 'B' + 'C' - from - to;
 
     if (depth <= 1) {
-		move(from, to, depth, choice);
+		move_disk(from, to, choice);
         return;
     }
 
     hanoi(from, mid, depth - 1, choice);
-	move(from, to, depth, choice);
+	move_disk(from, to, choice);
     hanoi(mid, to, depth - 1, choice);
 }
 
@@ -667,6 +785,8 @@ void solve(int choice) {
         return;
     }
 
+    // specialty solution configuration: when choice == 7
+
     if (choice == 7) {
         graph_init();
 
@@ -683,7 +803,16 @@ void solve(int choice) {
         return;
     }
 
-    // specialty solution configuration: when choice == 7
+    // specialty solution configuration: when choice == 9
+
+    if (choice == 9) {
+        graphic_init(src, dest, level, choice);
+
+        game(dest, level);
+
+        hdc_release();
+        return;
+    }
 
     printInit(src, dest, level, choice);
 
