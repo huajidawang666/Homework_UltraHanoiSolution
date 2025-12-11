@@ -565,6 +565,9 @@ void game(char dest, int level) {
         int result = get_command_input(&from, &to); // 0 == normal , -1 == quit, -2 == invalid
 
         if (result == -1) {
+        cct_gotoxy(Status_Line_X + 60, Status_Line_Y - 1); // 60 is the offset from frontier to input position
+        cout << "                     ";
+        cct_gotoxy(Status_Line_X + 60, Status_Line_Y - 1);
             cct_gotoxy(Status_Line_X, Status_Line_Y);
             cout << "游戏中止!!!!!";
             return;
@@ -577,6 +580,9 @@ void game(char dest, int level) {
         if (top[from - 'A'] <= 0) {
             cct_gotoxy(Status_Line_X, Status_Line_Y);
             cout << "源柱为空!";
+            cct_gotoxy(Status_Line_X + 60, Status_Line_Y - 1); // 60 is the offset from frontier to input position
+            cout << "                     ";
+            cct_gotoxy(Status_Line_X + 60, Status_Line_Y - 1);
             Sleep(HDC_Init_Delay);
             cct_gotoxy(Status_Line_X, Status_Line_Y);
             cout << "         ";
@@ -593,6 +599,9 @@ void game(char dest, int level) {
         if (top[to - 'A'] != 0 && disk[from - 'A'][top[from - 'A'] - 1] >= disk[to - 'A'][top[to - 'A'] - 1]) {
             cct_gotoxy(Status_Line_X, Status_Line_Y);
             cout << "大盘压小盘，非法移动!";
+            cct_gotoxy(Status_Line_X + 60, Status_Line_Y - 1); // 60 is the offset from frontier to input position
+            cout << "                     ";
+            cct_gotoxy(Status_Line_X + 60, Status_Line_Y - 1);
             Sleep(HDC_Init_Delay);
             cct_gotoxy(Status_Line_X, Status_Line_Y);
             cout << "                     ";
