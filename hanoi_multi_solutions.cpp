@@ -298,17 +298,16 @@ int get_command_input(char* from, char* to) {
         // match with demo: can only input normal character & enter ('\n' & '\r')
         while (!(((_ch = _getch()) >= 32 && _ch < 128) || _ch == '\r' || _ch == '\n'));
         
-        ch[i] = _ch;
-        if (ch[i] == '\r' || ch[i] == '\n') {
-            ch[i] = 0;
+        if (_ch == '\r' || _ch == '\n') {
             break;
         }
-        cout << ch[i];
-
+        cout << _ch;
 
         if (_ch >= 'a' && _ch <= 'z') {
             _ch += 'A' - 'a';
         }
+
+        ch[i] = _ch;
         num_of_input++;
     }
 
@@ -792,6 +791,7 @@ void solve(int choice) {
 
 		graphic_first_move_init(src, dest);
 
+        if (top[dest - 'A'] > 10 || top[dest - 'A'] < 0 || top[src - 'A'] > 10 || top[src - 'A'] < 0) return;
         disk[dest - 'A'][top[dest - 'A']++] = disk[src - 'A'][--top[src - 'A']];
         disk[src - 'A'][top[src - 'A']] = 0;
         step++;
